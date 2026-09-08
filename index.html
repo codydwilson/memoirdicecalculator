@@ -51,7 +51,7 @@
     letter-spacing:3px;
     text-transform:uppercase;
     color: var(--rust-dark);
-    display:flex; justify-content:space-between;
+    display:flex;
     margin-bottom:6px;
   }
   h1{
@@ -278,9 +278,8 @@
 <div class="wrap">
 
   <div class="masthead">
-    <div class="eyebrow"><span>FIELD ORDNANCE REFERENCE</span><span id="dateStamp"></span></div>
+    <div class="eyebrow"><span>MEMOIR '44 FIELD ORDNANCE REFERENCE</span></div>
     <h1>Battle Dice Calculator</h1>
-    <div class="sub">Memoir '44 — combat-die probability, per official 6-face battle die (2× Infantry, 1× Armor, 1× Grenade, 1× Star, 1× Flag)</div>
   </div>
 
   <!-- CONTROLS -->
@@ -350,18 +349,16 @@
       <div class="stacked-legend" id="stackedLegend"></div>
 
       <div class="footnote">
-        Hit chance per die = (matching-symbol faces + Grenade face<span id="starNote"></span><span id="retreatNote"></span>) / 6. Grenade is a wild hit against any unit type; Flag normally forces retreat instead of a hit — tracked separately below — unless the target has no legal retreat path, in which case each Flag removes a figure just like a hit. Distribution computed via exact binomial P(X=k) = C(n,k)·p^k·(1−p)^(n−k). "Wiped out" assumes all hits land in this single volley against the current figure count.
+        Distribution computed via exact binomial P(X=k) = C(n,k)·p^k·(1−p)^(n−k). "Wiped out" assumes all hits land in this single volley against the current figure count.
       </div>
     </div>
   </div>
 
   <!-- FLAGS -->
   <div class="panel">
-    <div class="panel-head"><span>03 — Retreat (Flags)</span><span>independent of target type</span></div>
+    <div class="panel-head"><span>03 — Retreat</span><span id="retreatStatusLabel"></span></div>
     <div class="panel-body">
       <div class="stat-row" id="flagStatRow"></div>
-      <div class="footnote" id="flagRetreatNote"></div>
-      <div class="footnote">Flag probability per die is fixed at 1/6 regardless of target type. Each flag forces the target to retreat one hex (two for units already Overrun-eligible per scenario rules); a unit unable to complete a retreat loses a figure instead.</div>
     </div>
   </div>
 
@@ -479,27 +476,22 @@ function renderStats(){
   const pAtLeastOneFlag = 1 - Math.pow(1-pFlag, n);
   const expectedFlags = n*pFlag;
   document.getElementById('flagStatRow').innerHTML = `
-    <div class="stat">
-      <div class="label">Flag Chance / Die</div>
-      <div class="value">${fmtPct(pFlag)}</div>
+    <div class="stat rust">
+      <div class="label">P(Forces Retreat)</div>
+      <div class="value">${fmtPct(pAtLeastOneFlag)}</div>
     </div>
     <div class="stat">
       <div class="label">Expected Flags</div>
       <div class="value">${expectedFlags.toFixed(2)}<small> / ${n}</small></div>
     </div>
-    <div class="stat">
-      <div class="label">P(≥1 Flag)</div>
-      <div class="value">${fmtPct(pAtLeastOneFlag)}</div>
-    </div>
   `;
-  document.getElementById('flagRetreatNote').textContent = noRetreat
-    ? 'No Retreat Path is active — Flags are already folded into the hit total above as figure losses.'
-    : 'Target can retreat normally — Flags cause retreat only and do not remove figures.';
+  document.getElementById('retreatStatusLabel').textContent = noRetreat
+    ? 'no retreat path — folded into hits above'
+    : 'target can retreat normally';
 
   document.getElementById('targetLabel').textContent = 'vs. ' + u.label.toUpperCase() + ' (' + currentFigures + '/' + u.figures + ' fig.)' + (starHits ? ' · STAR=HIT' : '') + (noRetreat ? ' · NO RETREAT' : '');
   document.getElementById('rollLabel').textContent = n + ' dice';
-  document.getElementById('starNote').textContent = starHits ? ' + Star face' : '';
-  document.getElementById('retreatNote').textContent = noRetreat ? ' + Flag face (blocked retreat)' : '';
+
 }
 
 function shadeColor(k, n){
@@ -563,7 +555,7 @@ function renderChart(){
     const color = s.isElim ? 'var(--olive-dark)' : shadeColor(s.k, n);
     return `<div class="seg-chip ${s.isElim ? 'elim' : ''}">
       <span class="sw" style="background:${color}"></span>
-      ${s.k} hit${s.k===1?'':'s'}: ${s.pct.toFixed(1)}%${s.isElim ? '<span class="warn">— wipes out unit</span>' : ''}
+      ${s.k} hit${s.k===1?'':'s'}: ${s.pct.toFixed(1)}%
     </div>`;
   }).join('');
 }
@@ -615,7 +607,6 @@ document.getElementById('retreatToggle').addEventListener('click', (e)=>{
   renderAll();
 });
 
-document.getElementById('dateStamp').textContent = new Date().toLocaleDateString('en-US', {year:'numeric', month:'short', day:'2-digit'}).toUpperCase();
 
 renderAll();
 </script>
