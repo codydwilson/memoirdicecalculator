@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battle Dice Calculator — Memoir '44</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Oswald:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #ddd8c2;
+    --paper-dark: #cdc7ac;
+    --ink: #262a1c;
+    --olive: #4b5232;
+    --olive-dark: #363c24;
+    --khaki: #a99a63;
+    --rust: #a13d2c;
+    --rust-dark: #7c2e21;
+    --star: #c99a2e;
+    --line: rgba(38,42,28,0.25);
+    --paper-tex: repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--paper-tex), var(--paper);
+    color: var(--ink);
+    font-family: 'Oswald', sans-serif;
+    padding: 28px 16px 60px;
+  }
+  .wrap{ max-width: 880px; margin: 0 auto; }
+
+  /* Header */
+  .masthead{
+    border: 3px solid var(--ink);
+    padding: 18px 22px 16px;
+    background: var(--paper-dark);
+    position: relative;
+    margin-bottom: 22px;
+  }
+  .masthead::before{
+    content:"";
+    position:absolute; inset:6px;
+    border: 1px solid var(--ink);
+    pointer-events:none;
+    opacity:0.55;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color: var(--rust-dark);
+    display:flex; justify-content:space-between;
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:900;
+    font-size: clamp(34px, 6vw, 54px);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 0;
+    line-height: 0.92;
+  }
+  .sub{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: var(--olive-dark);
+    margin-top: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  /* Panel layout */
+  .panel{
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    margin-bottom: 18px;
+  }
+  .panel-head{
+    background: var(--olive);
+    color: var(--paper);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    display:flex;
+    justify-content:space-between;
+  }
+  .panel-body{ padding: 18px 20px 20px; }
+
+  /* Controls */
+  .control-row{
+    display:flex; gap: 22px; flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .control{ flex: 1 1 260px; }
+  .control label{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--olive-dark);
+    margin-bottom: 8px;
+  }
+
+  .dice-stepper{
+    display:flex; align-items:center; gap:0;
+    border: 2px solid var(--ink);
+    width: fit-content;
+  }
+  .dice-stepper button{
+    width: 40px; height: 44px;
+    border:none;
+    background: var(--khaki);
+    color: var(--ink);
+    font-size: 20px;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:900;
+    cursor:pointer;
+  }
+  .dice-stepper button:hover{ background: var(--star); }
+  .dice-stepper .count{
+    width: 62px; text-align:center;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size: 26px; font-weight: 900;
+    background: var(--paper);
+    height:44px; display:flex; align-items:center; justify-content:center;
+    border-left: 2px solid var(--ink); border-right: 2px solid var(--ink);
+  }
+
+  .unit-select{
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .unit-btn{
+    flex: 1 1 auto;
+    border: 2px solid var(--ink);
+    background: var(--paper-dark);
+    padding: 10px 8px;
+    text-align:center;
+    cursor:pointer;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    transition: background 0.1s, color 0.1s;
+    user-select:none;
+  }
+  .unit-btn .fig{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:15px;
+    letter-spacing:0.5px;
+    display:block;
+    margin-top:3px;
+    font-weight:700;
+    text-transform: none;
+  }
+  .unit-btn.active{
+    background: var(--rust);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .unit-btn:not(.active):hover{ background: var(--khaki); }
+
+  /* Die face legend */
+  .die-legend{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .face{
+    border:1px solid var(--line);
+    background: var(--paper-dark);
+    padding: 8px 10px;
+    display:flex; align-items:center; gap:9px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11.5px;
+  }
+  .face .swatch{
+    width:26px; height:26px; flex:0 0 auto;
+    border:2px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700;
+    background: var(--paper);
+  }
+  .face.hit .swatch{ background: var(--rust); color: var(--paper); }
+  .face.miss .swatch{ background: var(--paper-dark); color: var(--ink); opacity:0.6; }
+  .face.flag .swatch{ background: var(--star); color: var(--ink); }
+  .face.hit.flag .swatch{ background: linear-gradient(135deg, var(--rust) 50%, var(--star) 50%); color: var(--ink); }
+  .face .odds{ margin-left:auto; opacity:0.7; }
+
+  /* Stat cards */
+  .stat-row{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .stat{
+    border: 2px solid var(--ink);
+    background: var(--olive-dark);
+    color: var(--paper);
+    padding: 12px 14px;
+  }
+  .stat .label{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    opacity: 0.75;
+    margin-bottom: 4px;
+  }
+  .stat .value{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size: 30px;
+    font-weight: 900;
+    line-height:1;
+  }
+  .stat .value small{ font-size: 15px; opacity:0.7; font-weight:600; }
+  .stat.rust{ background: var(--rust-dark); }
+
+  /* Chart */
+  .chart-wrap{ width:100%; }
+  #chart{ display:block; width:100%; height:auto; }
+  svg text{ font-family:'JetBrains Mono', monospace; }
+  .seg-label{ font-size: 12px; fill: var(--paper); font-weight:600; }
+  .seg-pct{ font-size: 11px; fill: var(--ink); }
+  .seg-divider{ stroke: var(--paper); stroke-width: 2; }
+  .seg-elim-mark{ stroke: var(--ink); stroke-width: 2; stroke-dasharray: 3 2; }
+
+  .stacked-legend{
+    display:flex; flex-wrap:wrap; gap: 8px 14px;
+    margin-top: 10px;
+  }
+  .seg-chip{
+    display:flex; align-items:center; gap:7px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    padding: 3px 0;
+  }
+  .seg-chip .sw{
+    width:14px; height:14px; flex:0 0 auto;
+    border:1px solid var(--ink);
+  }
+  .seg-chip.elim{ color: var(--rust-dark); font-weight:700; }
+  .seg-chip .warn{ opacity:0.75; font-size:10px; margin-left:2px; }
+
+  .footnote{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--olive-dark);
+    opacity:0.8;
+    margin-top: 14px;
+    line-height:1.6;
+    border-top: 1px dashed var(--line);
+    padding-top: 10px;
+  }
+
+  .legend-row{
+    display:flex; gap:16px; flex-wrap:wrap;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    margin-top: 10px;
+  }
+  .legend-row span{ display:flex; align-items:center; gap:6px; }
+  .swatch-sm{ width:12px; height:12px; display:inline-block; border:1px solid var(--ink); }
+
+  @media (max-width: 520px){
+    .panel-body{ padding: 14px; }
+    .stat .value{ font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="eyebrow"><span>FIELD ORDNANCE REFERENCE</span><span id="dateStamp"></span></div>
+    <h1>Battle Dice Calculator</h1>
+    <div class="sub">Memoir '44 — combat-die probability, per official 6-face battle die (2× Infantry, 1× Armor, 1× Grenade, 1× Star, 1× Flag)</div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="panel">
+    <div class="panel-head"><span>01 — Set the Attack</span><span id="rollLabel">1d6 × N</span></div>
+    <div class="panel-body">
+      <div class="control-row">
+        <div class="control">
+          <label>Dice Rolled</label>
+          <div class="dice-stepper">
+            <button id="decBtn" aria-label="decrease">–</button>
+            <div class="count" id="diceCount">4</div>
+            <button id="incBtn" aria-label="increase">+</button>
+          </div>
+        </div>
+        <div class="control" style="flex: 2 1 320px;">
+          <label>Target Unit</label>
+          <div class="unit-select" id="unitSelect">
+            <div class="unit-btn active" data-unit="infantry">Infantry<span class="fig">4 figures</span></div>
+            <div class="unit-btn" data-unit="armor">Armor<span class="fig">3 figures</span></div>
+            <div class="unit-btn" data-unit="artillery">Artillery<span class="fig">2 figures</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-row" style="margin-top:16px;">
+        <div class="control">
+          <label>Special Rule</label>
+          <div class="unit-select" id="starToggle">
+            <div class="unit-btn active" data-star="off">Standard<span class="fig">Star = miss</span></div>
+            <div class="unit-btn" data-star="on">Barrage / Air Power<span class="fig">Star = hit</span></div>
+          </div>
+        </div>
+        <div class="control">
+          <label>Figures Remaining <span id="figuresMaxNote" style="opacity:.6"></span></label>
+          <div class="dice-stepper">
+            <button id="figDecBtn" aria-label="decrease">–</button>
+            <div class="count" id="figuresCount">4</div>
+            <button id="figIncBtn" aria-label="increase">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-row" style="margin-top:16px;">
+        <div class="control" style="flex: 2 1 320px;">
+          <label>Retreat Path</label>
+          <div class="unit-select" id="retreatToggle">
+            <div class="unit-btn active" data-retreat="open">Can Retreat<span class="fig">Flag = retreat only</span></div>
+            <div class="unit-btn" data-retreat="blocked">No Retreat Path<span class="fig">Flag = figure lost (hit)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="die-legend" id="dieLegend"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="panel">
+    <div class="panel-head"><span>02 — Hit Probability</span><span id="targetLabel">vs. INFANTRY</span></div>
+    <div class="panel-body">
+      <div class="stat-row" id="statRow"></div>
+
+      <div class="chart-wrap">
+        <svg id="chart" viewBox="0 0 800 150" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="stacked-legend" id="stackedLegend"></div>
+
+      <div class="footnote">
+        Hit chance per die = (matching-symbol faces + Grenade face<span id="starNote"></span><span id="retreatNote"></span>) / 6. Grenade is a wild hit against any unit type; Flag normally forces retreat instead of a hit — tracked separately below — unless the target has no legal retreat path, in which case each Flag removes a figure just like a hit. Distribution computed via exact binomial P(X=k) = C(n,k)·p^k·(1−p)^(n−k). "Wiped out" assumes all hits land in this single volley against the current figure count.
+      </div>
+    </div>
+  </div>
+
+  <!-- FLAGS -->
+  <div class="panel">
+    <div class="panel-head"><span>03 — Retreat (Flags)</span><span>independent of target type</span></div>
+    <div class="panel-body">
+      <div class="stat-row" id="flagStatRow"></div>
+      <div class="footnote" id="flagRetreatNote"></div>
+      <div class="footnote">Flag probability per die is fixed at 1/6 regardless of target type. Each flag forces the target to retreat one hex (two for units already Overrun-eligible per scenario rules); a unit unable to complete a retreat loses a figure instead.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const FACES = [
+  {name:'Infantry', key:'infantry', count:2, type:'unit'},
+  {name:'Armor', key:'armor', count:1, type:'unit'},
+  {name:'Grenade', key:'grenade', count:1, type:'wild'},
+  {name:'Star', key:'star', count:1, type:'miss'},
+  {name:'Flag', key:'flag', count:1, type:'flag'},
+];
+const UNITS = {
+  infantry: {label:'Infantry', figures:4, hitFaces:['infantry','grenade']},
+  armor:    {label:'Armor',    figures:3, hitFaces:['armor','grenade']},
+  artillery:{label:'Artillery',figures:2, hitFaces:['grenade']},
+};
+
+let diceCount = 4;
+let unit = 'infantry';
+let starHits = false;
+let noRetreat = false;
+let currentFigures = UNITS[unit].figures;
+
+function activeHitFaces(unitKey){
+  let base = UNITS[unitKey].hitFaces;
+  if(starHits) base = base.concat(['star']);
+  if(noRetreat) base = base.concat(['flag']);
+  return base;
+}
+
+function choose(n,k){
+  if(k<0||k>n) return 0;
+  k = Math.min(k, n-k);
+  let r=1;
+  for(let i=0;i<k;i++){ r = r*(n-i)/(i+1); }
+  return r;
+}
+function binomPMF(n,p,k){ return choose(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k); }
+
+function hitProb(unitKey){
+  const hitFaces = activeHitFaces(unitKey);
+  let hitFaceCount = 0;
+  FACES.forEach(f=>{ if(hitFaces.includes(f.key)) hitFaceCount += f.count; });
+  return hitFaceCount/6;
+}
+
+function fmtPct(x){ return (x*100).toFixed(1)+'%'; }
+
+function renderLegend(){
+  const hitFaces = activeHitFaces(unit);
+  const el = document.getElementById('dieLegend');
+  el.innerHTML = '';
+  const symbols = {infantry:'I', armor:'▲', grenade:'✷', star:'★', flag:'⚑'};
+  FACES.forEach(f=>{
+    const isHit = hitFaces.includes(f.key);
+    const isFlagFace = f.key === 'flag';
+    let cls;
+    if(isFlagFace && isHit) cls = 'hit flag';
+    else if(isFlagFace) cls = 'flag';
+    else if(isHit) cls = 'hit';
+    else cls = 'miss';
+    const div = document.createElement('div');
+    div.className = 'face '+cls;
+    const status = isFlagFace ? (isHit ? 'HIT + retreat' : 'retreat') : (isHit ? 'HIT' : 'miss');
+    div.innerHTML = `<div class="swatch">${symbols[f.key]}</div>
+      <div>${f.name}<div style="opacity:.6">${f.count}/6 face${f.count>1?'s':''}</div></div>
+      <div class="odds">${status}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderUnitButtons(){
+  document.querySelectorAll('#unitSelect .unit-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.unit === unit);
+  });
+  document.querySelectorAll('#starToggle .unit-btn').forEach(b=>{
+    b.classList.toggle('active', (b.dataset.star === 'on') === starHits);
+  });
+  document.querySelectorAll('#retreatToggle .unit-btn').forEach(b=>{
+    b.classList.toggle('active', (b.dataset.retreat === 'blocked') === noRetreat);
+  });
+}
+
+function renderStats(){
+  const p = hitProb(unit);
+  const n = diceCount;
+  const u = UNITS[unit];
+  const expected = n*p;
+  const pAtLeastOne = 1 - Math.pow(1-p, n);
+  let pElim = 0;
+  for(let k=currentFigures;k<=n;k++){ pElim += binomPMF(n,p,k); }
+
+  document.getElementById('statRow').innerHTML = `
+    <div class="stat">
+      <div class="label">Hit Chance / Die</div>
+      <div class="value">${fmtPct(p)}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Expected Hits</div>
+      <div class="value">${expected.toFixed(2)}<small> / ${n}</small></div>
+    </div>
+    <div class="stat">
+      <div class="label">P(≥1 Hit)</div>
+      <div class="value">${fmtPct(pAtLeastOne)}</div>
+    </div>
+    <div class="stat rust">
+      <div class="label">P(Unit Wiped Out)</div>
+      <div class="value">${fmtPct(pElim)}</div>
+    </div>
+  `;
+
+  const pFlag = 1/6;
+  const pAtLeastOneFlag = 1 - Math.pow(1-pFlag, n);
+  const expectedFlags = n*pFlag;
+  document.getElementById('flagStatRow').innerHTML = `
+    <div class="stat">
+      <div class="label">Flag Chance / Die</div>
+      <div class="value">${fmtPct(pFlag)}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Expected Flags</div>
+      <div class="value">${expectedFlags.toFixed(2)}<small> / ${n}</small></div>
+    </div>
+    <div class="stat">
+      <div class="label">P(≥1 Flag)</div>
+      <div class="value">${fmtPct(pAtLeastOneFlag)}</div>
+    </div>
+  `;
+  document.getElementById('flagRetreatNote').textContent = noRetreat
+    ? 'No Retreat Path is active — Flags are already folded into the hit total above as figure losses.'
+    : 'Target can retreat normally — Flags cause retreat only and do not remove figures.';
+
+  document.getElementById('targetLabel').textContent = 'vs. ' + u.label.toUpperCase() + ' (' + currentFigures + '/' + u.figures + ' fig.)' + (starHits ? ' · STAR=HIT' : '') + (noRetreat ? ' · NO RETREAT' : '');
+  document.getElementById('rollLabel').textContent = n + ' dice';
+  document.getElementById('starNote').textContent = starHits ? ' + Star face' : '';
+  document.getElementById('retreatNote').textContent = noRetreat ? ' + Flag face (blocked retreat)' : '';
+}
+
+function shadeColor(k, n){
+  // interpolate from khaki (low k) to rust (high k)
+  const t = n === 0 ? 0 : k/n;
+  const c1 = [169,154,99];   // khaki
+  const c2 = [161,61,44];    // rust
+  const r = Math.round(c1[0] + (c2[0]-c1[0])*t);
+  const g = Math.round(c1[1] + (c2[1]-c1[1])*t);
+  const b = Math.round(c1[2] + (c2[2]-c1[2])*t);
+  return `rgb(${r},${g},${b})`;
+}
+
+function renderChart(){
+  const svg = document.getElementById('chart');
+  const n = diceCount;
+  const p = hitProb(unit);
+  const u = UNITS[unit];
+
+  const pmf = [];
+  for(let k=0;k<=n;k++) pmf.push(binomPMF(n,p,k));
+
+  const W = 800, H = 150;
+  const marginL = 12, marginR = 12, barY = 30, barH = 60;
+  const plotW = W - marginL - marginR;
+
+  let x = marginL;
+  let svgContent = '';
+  const segMeta = [];
+
+  for(let k=0;k<=n;k++){
+    const segW = pmf[k]*plotW;
+    const isElim = k >= currentFigures;
+    const color = isElim ? 'var(--olive-dark)' : shadeColor(k, n);
+    svgContent += `<rect x="${x}" y="${barY}" width="${segW}" height="${barH}" fill="${color}"><title>${k} hit${k===1?'':'s'}: ${(pmf[k]*100).toFixed(1)}%${isElim ? ' — wipes out unit' : ''}</title></rect>`;
+    if(segW > 26){
+      svgContent += `<text class="seg-label" x="${x+segW/2}" y="${barY+barH/2+5}" text-anchor="middle">${k}</text>`;
+    }
+    segMeta.push({k, pct: pmf[k]*100, isElim, x, segW});
+    x += segW;
+  }
+  // dividers
+  x = marginL;
+  for(let k=0;k<=n;k++){
+    svgContent += `<line class="seg-divider" x1="${x}" x2="${x}" y1="${barY}" y2="${barY+barH}"/>`;
+    x += pmf[k]*plotW;
+  }
+  svgContent += `<line class="seg-divider" x1="${x}" x2="${x}" y1="${barY}" y2="${barY+barH}"/>`;
+  // outer border
+  svgContent += `<rect x="${marginL}" y="${barY}" width="${plotW}" height="${barH}" fill="none" stroke="var(--ink)" stroke-width="2"/>`;
+  // 0% / 100% labels
+  svgContent += `<text class="seg-pct" x="${marginL}" y="${barY+barH+18}" text-anchor="start">0%</text>`;
+  svgContent += `<text class="seg-pct" x="${marginL+plotW}" y="${barY+barH+18}" text-anchor="end">100%</text>`;
+  svgContent += `<text class="seg-pct" x="${marginL+plotW/2}" y="${barY-10}" text-anchor="middle" style="opacity:.7">hits scored, this attack (n=${n} dice)</text>`;
+
+  svg.innerHTML = svgContent;
+
+  // HTML legend chips
+  const legend = document.getElementById('stackedLegend');
+  legend.innerHTML = segMeta.map(s => {
+    const color = s.isElim ? 'var(--olive-dark)' : shadeColor(s.k, n);
+    return `<div class="seg-chip ${s.isElim ? 'elim' : ''}">
+      <span class="sw" style="background:${color}"></span>
+      ${s.k} hit${s.k===1?'':'s'}: ${s.pct.toFixed(1)}%${s.isElim ? '<span class="warn">— wipes out unit</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderFiguresControl(){
+  const max = UNITS[unit].figures;
+  if(currentFigures > max) currentFigures = max;
+  document.getElementById('figuresCount').textContent = currentFigures;
+  document.getElementById('figuresMaxNote').textContent = '(max ' + max + ')';
+}
+
+function renderAll(){
+  renderFiguresControl();
+  renderLegend();
+  renderUnitButtons();
+  renderStats();
+  renderChart();
+}
+
+document.getElementById('incBtn').addEventListener('click', ()=>{
+  if(diceCount < 8){ diceCount++; document.getElementById('diceCount').textContent = diceCount; renderAll(); }
+});
+document.getElementById('decBtn').addEventListener('click', ()=>{
+  if(diceCount > 1){ diceCount--; document.getElementById('diceCount').textContent = diceCount; renderAll(); }
+});
+document.getElementById('unitSelect').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.unit-btn');
+  if(!btn) return;
+  unit = btn.dataset.unit;
+  currentFigures = UNITS[unit].figures;
+  renderAll();
+});
+document.getElementById('figIncBtn').addEventListener('click', ()=>{
+  if(currentFigures < UNITS[unit].figures){ currentFigures++; renderAll(); }
+});
+document.getElementById('figDecBtn').addEventListener('click', ()=>{
+  if(currentFigures > 1){ currentFigures--; renderAll(); }
+});
+document.getElementById('starToggle').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.unit-btn');
+  if(!btn) return;
+  starHits = btn.dataset.star === 'on';
+  renderAll();
+});
+document.getElementById('retreatToggle').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.unit-btn');
+  if(!btn) return;
+  noRetreat = btn.dataset.retreat === 'blocked';
+  renderAll();
+});
+
+document.getElementById('dateStamp').textContent = new Date().toLocaleDateString('en-US', {year:'numeric', month:'short', day:'2-digit'}).toUpperCase();
+
+renderAll();
+</script>
+</body>
+</html>
