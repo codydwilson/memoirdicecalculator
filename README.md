@@ -16,10 +16,6 @@ A small interactive tool for calculating hit probabilities in Memoir '44 combat 
 
 Open `index.html` in any browser, or visit the hosted GitHub Pages link for this repo. No installation required.
 
-## Hosting / Updating
-
-This is a static, single-file HTML app. Hosted via GitHub Pages — pushing changes to `main` redeploys automatically.
-
 ## License
 
 Licensed under the [MIT License](LICENSE).
