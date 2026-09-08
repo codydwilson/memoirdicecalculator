@@ -232,8 +232,8 @@
   .seg-elim-mark{ stroke: var(--ink); stroke-width: 2; stroke-dasharray: 3 2; }
 
   .stacked-legend{
-    display:flex; flex-wrap:wrap; gap: 8px 14px;
-    margin-top: 10px;
+    display:flex; flex-wrap:wrap; gap: 6px 14px;
+    margin-top: 4px;
   }
   .seg-chip{
     display:flex; align-items:center; gap:7px;
@@ -344,7 +344,7 @@
       <div class="stat-row" id="statRow"></div>
 
       <div class="chart-wrap">
-        <svg id="chart" viewBox="0 0 800 150" preserveAspectRatio="xMidYMid meet"></svg>
+        <svg id="chart" viewBox="0 0 800 105" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
       <div class="stacked-legend" id="stackedLegend"></div>
 
@@ -514,8 +514,8 @@ function renderChart(){
   const pmf = [];
   for(let k=0;k<=n;k++) pmf.push(binomPMF(n,p,k));
 
-  const W = 800, H = 150;
-  const marginL = 12, marginR = 12, barY = 30, barH = 60;
+  const W = 800, H = 105;
+  const marginL = 12, marginR = 12, barY = 22, barH = 56;
   const plotW = W - marginL - marginR;
 
   let x = marginL;
